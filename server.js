@@ -17,6 +17,9 @@ let LABEL_SELECTOR = "app=imgproxy-imgproxy";
 
 let clients = [];
 let lastReportPath = "";
+let metricsHistory = [];
+let testStartTime = null;
+let currentTestName = "";
 
 // ---- SSE logs ----
 app.get("/api/logs", (req, res) => {
@@ -113,10 +116,14 @@ app.get("/api/slave-status", (req, res) => {
 });
 
 // ---- Run JMeter Test ----
-function runJmeterTest(res) {
+function runJmeterTest(res, customName = "") {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
-  lastReportPath = `/reports/report-${ts}`;
-  const cmd = `cd ${JMETER_PATH} && ./bin/jmeter -n -t ${JMETER_TEST} -R ${JMETER_SLAVES.join(",")} -l results/result-${ts}.jtl -e -o reports/report-${ts}`;
+  const reportName = customName ? `${customName}-report-${ts}` : `report-${ts}`;
+  lastReportPath = `/reports/${reportName}`;
+  currentTestName = customName || "default";
+  testStartTime = new Date();
+  
+  const cmd = `cd ${JMETER_PATH} && ./bin/jmeter -n -t ${JMETER_TEST} -R ${JMETER_SLAVES.join(",")} -l results/result-${ts}.jtl -e -o reports/${reportName}`;
 
   console.log("▶ Running JMeter test:");
   console.log(`ssh root@${MASTER_IP} "${cmd}"`);
@@ -127,18 +134,22 @@ function runJmeterTest(res) {
   ssh.on("close", (code) => {
     if (code === 0) {
       broadcastLog(`✅ JMeter finished with exit code ${code}`);
-      broadcastLog(`REPORT_LINK::${lastReportPath}`);
+      broadcastLog(`REPORT_LINK::${lastReportPath}::${currentTestName}`);
     } else {
       broadcastLog(`❌ JMeter exited with code ${code}`);
     }
+    // Reset test tracking
+    testStartTime = null;
+    currentTestName = "";
   });
 
   res.json({ status: "started", message: "JMeter test started, logs streaming…" });
 }
 
 // ---- Start Test with Auto-Start Slaves ----
-app.get("/api/start-test", (req, res) => {
+app.post("/api/start-test", (req, res) => {
   console.log("▶ /api/start-test called");
+  const { customName } = req.body;
   checkSlaves((statuses) => {
     const stopped = statuses.filter(s => s.status !== "RUNNING");
     if (stopped.length > 0) {
@@ -152,9 +163,9 @@ app.get("/api/start-test", (req, res) => {
         });
       });
       broadcastLog(`⚡ Auto-started ${stopped.length} stopped slaves...`);
-      setTimeout(() => runJmeterTest(res), 5000);
+      setTimeout(() => runJmeterTest(res, customName), 5000);
     } else {
-      runJmeterTest(res);
+      runJmeterTest(res, customName);
     }
   });
 });
@@ -219,6 +230,18 @@ app.get("/api/metrics", (req, res) => {
           mem: resources[name]?.mem || "0Mi"
         }));
         
+        // Store metrics history if test is running
+        if (testStartTime) {
+          metricsHistory.push({
+            timestamp: new Date(),
+            testName: currentTestName,
+            podCount: results.length,
+            totalCpu: results.reduce((sum, p) => sum + parseInt(p.cpu), 0),
+            totalMem: results.reduce((sum, p) => sum + parseInt(p.mem), 0),
+            pods: results
+          });
+        }
+        
         console.log("✅ /api/metrics result:", results);
         res.json(results);
       });
@@ -243,6 +266,18 @@ app.get("/api/metrics", (req, res) => {
         cpu: resources[name]?.cpu || "0m",
         mem: resources[name]?.mem || "0Mi"
       }));
+      
+      // Store metrics history if test is running
+      if (testStartTime) {
+        metricsHistory.push({
+          timestamp: new Date(),
+          testName: currentTestName,
+          podCount: results.length,
+          totalCpu: results.reduce((sum, p) => sum + parseInt(p.cpu), 0),
+          totalMem: results.reduce((sum, p) => sum + parseInt(p.mem), 0),
+          pods: results
+        });
+      }
       
       console.log("✅ /api/metrics result:", results);
       res.json(results);
@@ -356,6 +391,103 @@ app.get("/api/available-labels", (req, res) => {
     const availableLabels = Array.from(labelSet).sort();
     console.log("✅ Available labels:", availableLabels);
     res.json({ labels: availableLabels });
+  });
+});
+
+// ---- Previous Reports ----
+app.get("/api/reports", (req, res) => {
+  console.log("📡 /api/reports called");
+  const cmd = `find ${JMETER_PATH}/reports -maxdepth 1 -type d -name "*report*" | sort -r`;
+  const ssh = spawn("ssh", [`root@${MASTER_IP}`, cmd]);
+
+  let output = "";
+  ssh.stdout.on("data", data => (output += data.toString()));
+  ssh.stderr.on("data", data => console.error("ERR:", data.toString()));
+
+  ssh.on("close", code => {
+    if (code === 0) {
+      const reports = output.trim().split("\n")
+        .filter(line => line.trim())
+        .map(path => {
+          const reportName = path.split("/").pop();
+          // Extract timestamp from report name
+          const timestampMatch = reportName.match(/(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z)/);
+          const timestamp = timestampMatch ? timestampMatch[1].replace(/T/, ' ').replace(/-/g, ':').replace('Z', '') : 'Unknown';
+          
+          return {
+            name: reportName,
+            path: `/reports/${reportName}`,
+            url: `http://${MASTER_IP}/${reportName}/index.html`,
+            timestamp: timestamp
+          };
+        });
+      res.json(reports);
+    } else {
+      res.status(500).json({ error: `Failed to fetch reports (exit ${code})` });
+    }
+  });
+});
+
+// ---- Download CSV Report ----
+app.get("/api/download-csv", (req, res) => {
+  console.log("📡 /api/download-csv called");
+  
+  if (metricsHistory.length === 0) {
+    return res.status(400).json({ error: "No metrics data available" });
+  }
+
+  // Calculate averages and generate CSV
+  const csvHeader = "Test Name,Timestamp,Pod Count,Total CPU (mCores),Total Memory (MiB),Average CPU per Pod,Average Memory per Pod\n";
+  
+  const csvRows = metricsHistory.map(metric => {
+    const avgCpu = metric.podCount > 0 ? (metric.totalCpu / metric.podCount).toFixed(2) : 0;
+    const avgMem = metric.podCount > 0 ? (metric.totalMem / metric.podCount).toFixed(2) : 0;
+    
+    return `${metric.testName},${metric.timestamp.toISOString()},${metric.podCount},${metric.totalCpu},${metric.totalMem},${avgCpu},${avgMem}`;
+  }).join("\n");
+
+  const csvContent = csvHeader + csvRows;
+  
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="jmeter-metrics-report.csv"');
+  res.send(csvContent);
+});
+
+// ---- Kubernetes Contexts ----
+app.get("/api/contexts", (req, res) => {
+  console.log("📡 /api/contexts called");
+  exec("kubectl config get-contexts -o name", (err, stdout, stderr) => {
+    if (err) {
+      console.error("❌ kubectl get contexts error:", stderr.toString());
+      return res.status(500).json({ error: stderr.toString() });
+    }
+    
+    const contexts = stdout.trim().split("\n").filter(ctx => ctx.trim());
+    
+    // Get current context
+    exec("kubectl config current-context", (err2, stdout2, stderr2) => {
+      if (err2) {
+        console.error("❌ kubectl current context error:", stderr2.toString());
+        return res.status(500).json({ error: stderr2.toString() });
+      }
+      
+      const currentContext = stdout2.trim();
+      res.json({ contexts, currentContext });
+    });
+  });
+});
+
+app.post("/api/contexts", (req, res) => {
+  const { context } = req.body;
+  if (!context) return res.status(400).json({ error: "Context name required" });
+
+  console.log(`🔄 Switching to context: ${context}`);
+  exec(`kubectl config use-context ${context}`, (err, stdout, stderr) => {
+    if (err) {
+      console.error("❌ kubectl use context error:", stderr.toString());
+      return res.status(500).json({ error: stderr.toString() });
+    }
+    res.json({ status: "switched", context, output: stdout });
   });
 });
 
