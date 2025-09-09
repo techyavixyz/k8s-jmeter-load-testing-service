@@ -372,6 +372,20 @@ body {
   gap: 2rem;
 }
 
+.metrics-horizontal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  min-height: 400px;
+}
+
+.metrics-horizontal .metric-card {
+  min-height: 400px;
+}
+
+.metrics-horizontal canvas {
+  height: 300px !important;
+}
 .metric-card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -423,7 +437,7 @@ canvas {
 
 .management-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 2rem;
 }
 
@@ -503,6 +517,46 @@ canvas {
   color: #b0b0b0;
 }
 
+.input-group-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.input-group-vertical label {
+  font-weight: 600;
+  color: #b0b0b0;
+  margin-bottom: 0.25rem;
+}
+
+.selector-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.selector-examples small {
+  color: #b0b0b0;
+  font-weight: 600;
+}
+
+.example-btn {
+  padding: 0.5rem 1rem;
+  background: rgba(100, 255, 218, 0.1);
+  border: 1px solid rgba(100, 255, 218, 0.3);
+  color: #64ffda;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.example-btn:hover {
+  background: rgba(100, 255, 218, 0.2);
+  border-color: #64ffda;
+}
 .help-text {
   color: #b0b0b0;
   font-size: 0.9rem;
@@ -524,10 +578,18 @@ canvas {
 
 .tables-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 2rem;
 }
 
+.timeline-card {
+  grid-column: 1;
+}
+
+.timeline-card .table-wrapper {
+  max-height: 500px;
+  overflow-y: auto;
+}
 .table-card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -824,7 +886,8 @@ canvas {
   }
 
   .metrics-grid,
-  .metrics-grid-2 {
+  .metrics-grid-2,
+  .metrics-horizontal {
     grid-template-columns: 1fr;
   }
 

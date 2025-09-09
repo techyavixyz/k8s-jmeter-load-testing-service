@@ -128,7 +128,7 @@
             <i class="fas fa-layer-group"></i>
             Per-Pod Resource Usage
           </h3>
-          <div class="metrics-grid-2">
+          <div class="metrics-horizontal">
             <div class="metric-card">
               <h4>CPU per Pod</h4>
               <canvas id="perPodCpuChart"></canvas>
@@ -146,7 +146,7 @@
             <i class="fas fa-server"></i>
             Node Resource Usage
           </h3>
-          <div class="metrics-grid-2">
+          <div class="metrics-horizontal">
             <div class="metric-card">
               <h4>Node CPU</h4>
               <canvas id="nodeCpuChart"></canvas>
@@ -169,6 +169,30 @@
         </h2>
         
         <div class="management-grid">
+          <!-- Label Selector Configuration -->
+          <div class="management-card">
+            <h3><i class="fas fa-tags"></i> Pod Label Selector</h3>
+            <div class="management-content">
+              <div class="input-group-vertical">
+                <label>Current Selector:</label>
+                <input type="text" id="currentSelector" class="form-input" readonly>
+                <label>New Selector:</label>
+                <input type="text" id="newSelector" class="form-input" placeholder="e.g., app=nginx or tier=frontend">
+                <div class="selector-examples">
+                  <small>Examples:</small>
+                  <button class="example-btn" onclick="setExampleSelector('app=nginx')">app=nginx</button>
+                  <button class="example-btn" onclick="setExampleSelector('tier=frontend')">tier=frontend</button>
+                  <button class="example-btn" onclick="setExampleSelector('component=api')">component=api</button>
+                </div>
+              </div>
+              <button class="action-btn save-btn" onclick="updateLabelSelector()">
+                <i class="fas fa-save"></i>
+                Update Label Selector
+              </button>
+              <div id="selectorStatus" class="status-message"></div>
+            </div>
+          </div>
+
           <!-- HPA Management -->
           <div class="management-card">
             <h3><i class="fas fa-expand-arrows-alt"></i> HPA Management</h3>
@@ -216,7 +240,7 @@
         </h2>
         
         <div class="tables-grid">
-          <div class="table-card">
+          <div class="table-card timeline-card">
             <h3><i class="fas fa-history"></i> Timeline Events</h3>
             <div class="table-wrapper">
               <table id="timeline" class="data-table">

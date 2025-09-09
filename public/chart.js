@@ -251,3 +251,66 @@ async function fetchNodes() {
 // Polling
 setInterval(fetchMetrics, 2000);
 setInterval(fetchNodes, 5000);
+
+// ---------------- Label Selector Management ----------------
+function setExampleSelector(selector) {
+  document.getElementById("newSelector").value = selector;
+}
+
+async function updateLabelSelector() {
+  const newSelector = document.getElementById("newSelector").value.trim();
+  if (!newSelector) {
+    alert("Please enter a label selector");
+    return;
+  }
+
+  console.log(`🏷️ updateLabelSelector() to: ${newSelector}`);
+  document.getElementById("selectorStatus").innerText = "🔄 Updating label selector...";
+  
+  try {
+    const res = await fetch("/api/label-selector", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ selector: newSelector })
+    });
+    const data = await res.json();
+    
+    if (data.status === "updated") {
+      CURRENT_LABEL_SELECTOR = newSelector;
+      document.getElementById("currentSelector").value = newSelector;
+      document.getElementById("newSelector").value = "";
+      document.getElementById("selectorStatus").innerText = "✅ Label selector updated successfully";
+      
+      // Clear existing data and restart monitoring
+      labels.length = 0;
+      podsData.length = 0;
+      cpuData.length = 0;
+      memData.length = 0;
+      ingressData.length = 0;
+      
+      // Clear per-pod charts
+      perPodCpuChart.data.datasets = [];
+      perPodMemChart.data.datasets = [];
+      
+      // Update all charts
+      podsChart.update();
+      cpuChart.update();
+      memChart.update();
+      ingressChart.update();
+      perPodCpuChart.update();
+      perPodMemChart.update();
+      
+      alert(`✅ Label selector updated to: ${newSelector}`);
+    } else {
+      document.getElementById("selectorStatus").innerText = "❌ Update failed";
+    }
+  } catch (err) {
+    console.error("updateLabelSelector() error:", err);
+    document.getElementById("selectorStatus").innerText = "❌ Update failed";
+  }
+}
+
+// Initialize current selector display
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById("currentSelector").value = CURRENT_LABEL_SELECTOR;
+});

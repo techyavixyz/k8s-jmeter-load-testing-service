@@ -306,6 +306,20 @@ app.post("/api/jmx", (req, res) => {
   });
 });
 
+// ---- Label Selector Management ----
+app.post("/api/label-selector", (req, res) => {
+  const { selector } = req.body;
+  if (!selector) return res.status(400).json({ error: "Label selector required" });
+
+  console.log(`🏷️ Updating label selector to: ${selector}`);
+  LABEL_SELECTOR = selector;
+  res.json({ status: "updated", selector: LABEL_SELECTOR });
+});
+
+app.get("/api/label-selector", (req, res) => {
+  res.json({ selector: LABEL_SELECTOR });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Dashboard running at http://localhost:${PORT}`);
 });
