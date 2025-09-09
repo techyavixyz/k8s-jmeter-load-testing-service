@@ -581,6 +581,49 @@ canvas {
   flex-direction: column;
   gap: 2rem;
 }
+
+/* Reports Section */
+.reports-section {
+  padding: 3rem 0;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.reports-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+}
+
+.reports-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.report-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(45deg, #2196f3, #42a5f5);
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.report-link-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+}
+
 .table-card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -783,6 +826,21 @@ canvas {
 
 .modal-btn:hover {
   transform: translateY(-2px);
+}
+
+/* Test Name Modal specific styles */
+#testNameModal .modal-body {
+  padding: 2rem;
+}
+
+#testNameModal .help-text {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #b0b0b0;
+}
+
+#testNameModal .help-text strong {
+  color: #64ffda;
 }
 
 /* Footer Styles */
