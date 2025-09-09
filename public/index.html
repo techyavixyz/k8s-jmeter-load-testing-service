@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>K8s Load Test Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Kubernetes Load Test Dashboard</h1>
+
+  <div id="buttonBar">
+    <button class="start" onclick="startSlaves()">▶ Start Slave Servers</button>
+    <button class="stop" onclick="stopSlaves()">🛑 Stop Slave Servers</button>
+    <button class="test" onclick="startTest()">▶ Start JMeter Test</button>
+    <button class="download" onclick="downloadCSV()">⬇ Download CSV</button>
+  </div>
+
+  <div id="content">
+    <h2>Slave Status</h2>
+    <table id="slaveStatus">
+      <thead><tr><th>IP</th><th>Status</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <div id="logPanel" class="log"></div>
+    <div id="reportLink"></div>
+
+    <div class="grid">
+      <canvas id="podsChart"></canvas>
+      <canvas id="cpuChart"></canvas>
+      <canvas id="memChart"></canvas>
+      <canvas id="ingressChart"></canvas>
+    </div>
+
+    <h2>Per-Pod CPU/Memory</h2>
+    <div class="grid">
+      <canvas id="perPodCpuChart"></canvas>
+      <canvas id="perPodMemChart"></canvas>
+    </div>
+
+    <h2>📊 Node CPU/Memory</h2>
+    <div class="grid">
+      <canvas id="nodeCpuChart"></canvas>
+      <canvas id="nodeMemChart"></canvas>
+    </div>
+
+    <h2>🖥️ Node Resources</h2>
+    <table id="nodeResources">
+      <thead><tr><th>Node</th><th>CPU</th><th>Memory</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>📌 Timeline Events</h2>
+    <table id="timeline">
+      <thead><tr><th>Time</th><th>Event</th><th>Pods</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>📊 Pod Resource Limits</h2>
+    <table id="podResources">
+      <thead><tr><th>Pod</th><th>CPU (mCores)</th><th>Memory (MiB)</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>⚙️ Manage HPA</h2>
+    <button onclick="loadHpaList()">📂 Load HPA List</button>
+    <br/><br/>
+    <select id="hpaSelect" style="width:50%;padding:5px;"></select>
+    <br/><br/>
+    <label>Min Replicas:</label>
+    <input type="number" id="minReplicas" value="1" style="width:80px;margin:5px;">
+    <label>Max Replicas:</label>
+    <input type="number" id="maxReplicas" value="5" style="width:80px;margin:5px;">
+    <br/>
+    <button onclick="updateHpa()">💾 Save HPA</button>
+    <div id="hpaStatus"></div>
+
+
+    <h2>📝 Manage JMX File</h2>
+    <button onclick="openJmxModal()">📂 Edit JMX</button>
+
+    <!-- ✅ JMX Modal -->
+    <div id="jmxModal" class="modal">
+      <div class="modal-content">
+        <h2>📝 Edit JMX File</h2>
+        <textarea id="jmxEditor"></textarea>
+        <br/>
+        <button class="save" onclick="saveJmx()">💾 Save</button>
+        <button class="close" onclick="closeJmxModal()">❌ Close</button>
+        <div id="jmxStatus"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="chart.js"></script>
+  <script src="jmx.js"></script>
+  <script src="hpa.js"></script>
+
+</body>
+</html>
