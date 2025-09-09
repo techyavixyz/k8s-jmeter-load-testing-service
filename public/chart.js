@@ -26,16 +26,37 @@ async function stopSlaves() {
 }
 
 async function startTest() {
-  console.log("▶ startTest() clicked");
+  // Show custom name modal
+  document.getElementById("testNameModal").style.display = "flex";
+}
+
+async function startTestWithName() {
+  const customName = document.getElementById("testCustomName").value.trim();
+  
+  console.log("▶ startTestWithName() clicked with name:", customName);
   document.getElementById("logPanel").innerHTML = "🚀 Starting JMeter test...";
   document.getElementById("reportLink").innerHTML = "";
+  
+  // Close modal
+  document.getElementById("testNameModal").style.display = "none";
+  document.getElementById("testCustomName").value = "";
+  
   try {
-    const res = await fetch("/api/start-test");
+    const res = await fetch("/api/start-test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customName })
+    });
     const data = await res.json();
     if (data.status === "started") streamLogs();
   } catch (err) {
-    console.error("startTest() error:", err);
+    console.error("startTestWithName() error:", err);
   }
+}
+
+function closeTestNameModal() {
+  document.getElementById("testNameModal").style.display = "none";
+  document.getElementById("testCustomName").value = "";
 }
 
 function streamLogs() {
@@ -45,10 +66,12 @@ function streamLogs() {
 
   evtSource.onmessage = function(event) {
     if (event.data.startsWith("REPORT_LINK::")) {
-      let path = event.data.replace("REPORT_LINK::", "").trim();
+      const parts = event.data.replace("REPORT_LINK::", "").split("::");
+      let path = parts[0].trim();
+      const testName = parts[1] || "default";
       path = path.replace(/^\/reports\//, "");
       document.getElementById("reportLink").innerHTML =
-        `<a href="http://164.52.211.192/${path}/index.html" target="_blank">📊 Open JMeter Report</a>`;
+        `<a href="http://164.52.211.192/${path}/index.html" target="_blank">📊 Open JMeter Report (${testName})</a>`;
     } else {
       logPanel.innerHTML += event.data + "<br/>";
       logPanel.scrollTop = logPanel.scrollHeight;
@@ -56,8 +79,26 @@ function streamLogs() {
   };
 }
 
-function downloadCSV() {
-  window.location.href = "/api/download";
+async function downloadCSV() {
+  try {
+    const response = await fetch("/api/download-csv");
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'jmeter-metrics-report.csv';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } else {
+      alert("No metrics data available for download");
+    }
+  } catch (err) {
+    console.error("downloadCSV() error:", err);
+    alert("Failed to download CSV report");
+  }
 }
 
 // ---------------- Slave Status ----------------
@@ -394,4 +435,108 @@ async function updateLabelSelector() {
 document.addEventListener('DOMContentLoaded', function() {
   loadCurrentConfig();
   loadAvailableLabels();
+  loadPreviousReports();
+  loadKubernetesContexts();
 });
+
+// ---- Previous Reports Management ----
+async function loadPreviousReports() {
+  try {
+    const res = await fetch("/api/reports");
+    const reports = await res.json();
+    const tbody = document.querySelector("#previousReports tbody");
+    tbody.innerHTML = "";
+    
+    reports.forEach(report => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${report.name}</td>
+        <td>${report.timestamp}</td>
+        <td>
+          <a href="${report.url}" target="_blank" class="report-link-btn">
+            <i class="fas fa-external-link-alt"></i> View Report
+          </a>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+    
+    document.getElementById("reportsStatus").innerText = `✅ Found ${reports.length} reports`;
+  } catch (err) {
+    console.error("loadPreviousReports() error:", err);
+    document.getElementById("reportsStatus").innerText = "❌ Failed to load reports";
+  }
+}
+
+// ---- Kubernetes Context Management ----
+async function loadKubernetesContexts() {
+  try {
+    const res = await fetch("/api/contexts");
+    const data = await res.json();
+    
+    document.getElementById("currentContext").value = data.currentContext;
+    
+    const select = document.getElementById("availableContexts");
+    select.innerHTML = '<option value="">Select context...</option>';
+    
+    data.contexts.forEach(context => {
+      const option = document.createElement("option");
+      option.value = context;
+      option.textContent = context;
+      if (context === data.currentContext) {
+        option.textContent += " (current)";
+      }
+      select.appendChild(option);
+    });
+    
+    document.getElementById("contextStatus").innerText = `✅ Loaded ${data.contexts.length} contexts`;
+  } catch (err) {
+    console.error("loadKubernetesContexts() error:", err);
+    document.getElementById("contextStatus").innerText = "❌ Failed to load contexts";
+  }
+}
+
+function selectAvailableContext() {
+  const select = document.getElementById("availableContexts");
+  const selectedContext = select.value;
+  if (selectedContext) {
+    document.getElementById("newContext").value = selectedContext;
+  }
+}
+
+async function switchKubernetesContext() {
+  const newContext = document.getElementById("newContext").value.trim();
+  if (!newContext) {
+    alert("Please enter a context name");
+    return;
+  }
+
+  console.log(`🔄 switchKubernetesContext() to: ${newContext}`);
+  document.getElementById("contextStatus").innerText = "🔄 Switching context...";
+  
+  try {
+    const res = await fetch("/api/contexts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ context: newContext })
+    });
+    const data = await res.json();
+    
+    if (data.status === "switched") {
+      document.getElementById("currentContext").value = newContext;
+      document.getElementById("newContext").value = "";
+      document.getElementById("contextStatus").innerText = "✅ Context switched successfully";
+      
+      // Reload available labels and namespaces for new context
+      await loadCurrentConfig();
+      await loadAvailableLabels();
+      
+      alert(`✅ Switched to context: ${newContext}`);
+    } else {
+      document.getElementById("contextStatus").innerText = "❌ Context switch failed";
+    }
+  } catch (err) {
+    console.error("switchKubernetesContext() error:", err);
+    document.getElementById("contextStatus").innerText = "❌ Context switch failed";
+  }
+}
