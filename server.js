@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 4000;
 app.use(express.static("public"));
 app.use(bodyParser.json({ limit: "10mb" }));
 
-const USERNAME = process.env.USERNAME || "root";
+const USER_NAME = process.env.USER_NAME || "root";
 const MASTER_IP = process.env.MASTER_IP || "164.52.211.192";
 const JMETER_PATH = process.env.JMETER_PATH || "~/jmeter";
 const JMETER_TEST = process.env.JMETER_TEST || "gabiru.jmx";
@@ -53,8 +53,8 @@ function checkSlaves(callback) {
 
   JMETER_SLAVES.forEach(ip => {
     const cmd = "pgrep -f jmeter-server >/dev/null && echo RUNNING || echo STOPPED";
-    console.log(`➡ ssh ${USERNAME}@${ip} "${cmd}"`);
-    const ssh = spawn("ssh", [`${USERNAME}@${ip}`, cmd]);
+    console.log(`➡ ssh ${USER_NAME}@${ip} "${cmd}"`);
+    const ssh = spawn("ssh", [`${USER_NAME}@${ip}`, cmd]);
 
     let status = "STOPPED";
     ssh.stdout.on("data", (data) => {
@@ -80,9 +80,9 @@ function checkSlaves(callback) {
 app.get("/api/start-slaves", (req, res) => {
   console.log("▶ /api/start-slaves called");
   JMETER_SLAVES.forEach(ip => {
-    const cmd = `cd ${JMETER_PATH}/bin && nohup ./jmeter-server > /${USERNAME}/jmeter/jmeter-server-${ip}.log 2>&1 &`;
+    const cmd = `cd ${JMETER_PATH}/bin && nohup ./jmeter-server > /${USER_NAME}/jmeter/jmeter-server-${ip}.log 2>&1 &`;
     console.log(`🚀 Starting slave ${ip}: ${cmd}`);
-    const ssh = spawn("ssh", [`${USERNAME}@${ip}`, cmd]);
+    const ssh = spawn("ssh", [`${USER_NAME}@${ip}`, cmd]);
     
     ssh.stderr.on("data", (data) => {
       console.error(`Start slave error for ${ip}:`, data.toString());
@@ -101,7 +101,7 @@ app.get("/api/stop-slaves", (req, res) => {
   JMETER_SLAVES.forEach(ip => {
     const cmd = `pkill -f jmeter-server || true`;
     console.log(`🛑 Stopping slave ${ip}: ${cmd}`);
-    const ssh = spawn("ssh", [`${USERNAME}@${ip}`, cmd]);
+    const ssh = spawn("ssh", [`${USER_NAME}@${ip}`, cmd]);
     
     ssh.stderr.on("data", (data) => {
       console.error(`Stop slave error for ${ip}:`, data.toString());
@@ -131,9 +131,9 @@ function runJmeterTest(res, customName = "") {
   const cmd = `cd ${JMETER_PATH} && ./bin/jmeter -n -t ${JMETER_TEST} -R ${JMETER_SLAVES.join(",")} -l results/result-${ts}.jtl -e -o reports/${reportName}`;
 
   console.log("▶ Running JMeter test:");
-  console.log(`ssh ${USERNAME}@${MASTER_IP} "${cmd}"`);
+  console.log(`ssh ${USER_NAME}@${MASTER_IP} "${cmd}"`);
 
-  const ssh = spawn("ssh", [`${USERNAME}@${MASTER_IP}`, cmd]);
+  const ssh = spawn("ssh", [`${USER_NAME}@${MASTER_IP}`, cmd]);
   ssh.stdout.on("data", (data) => broadcastLog(data.toString()));
   ssh.stderr.on("data", (data) => broadcastLog("ERR: " + data.toString()));
   ssh.on("close", (code) => {
@@ -159,9 +159,9 @@ app.post("/api/start-test", (req, res) => {
     const stopped = statuses.filter(s => s.status !== "RUNNING");
     if (stopped.length > 0) {
       stopped.forEach(s => {
-        const cmd = `cd ${JMETER_PATH}/bin && nohup ./jmeter-server > /${USERNAME}/jmeter/jmeter-server-${s.ip}.log 2>&1 &`;
+        const cmd = `cd ${JMETER_PATH}/bin && nohup ./jmeter-server > /${USER_NAME}/jmeter/jmeter-server-${s.ip}.log 2>&1 &`;
         console.log(`⚡ Auto-starting slave ${s.ip}: ${cmd}`);
-        const ssh = spawn("ssh", [`${USERNAME}@${s.ip}`, cmd]);
+        const ssh = spawn("ssh", [`${USER_NAME}@${s.ip}`, cmd]);
         
         ssh.stderr.on("data", (data) => {
           console.error(`Auto-start error for ${s.ip}:`, data.toString());
@@ -311,7 +311,7 @@ app.get("/api/nodes", (req, res) => {
 app.get("/api/jmx", (req, res) => {
   console.log("📡 /api/jmx GET called");
   const cmd = `cat ${JMETER_PATH}/${JMETER_TEST}`;
-  const ssh = spawn("ssh", [`${USERNAME}@${MASTER_IP}`, cmd]);
+  const ssh = spawn("ssh", [`${USER_NAME}@${MASTER_IP}`, cmd]);
 
   let output = "";
   ssh.stdout.on("data", data => (output += data.toString()));
@@ -331,7 +331,7 @@ app.post("/api/jmx", (req, res) => {
   const content = req.body.content;
   if (!content) return res.status(400).json({ error: "Missing JMX content" });
 
-  const ssh = spawn("ssh", [`${USERNAME}@${MASTER_IP}`, `tee ${JMETER_PATH}/${JMETER_TEST}`]);
+  const ssh = spawn("ssh", [`${USER_NAME}@${MASTER_IP}`, `tee ${JMETER_PATH}/${JMETER_TEST}`]);
   ssh.stdin.write(content);
   ssh.stdin.end();
 
@@ -355,7 +355,7 @@ app.post("/api/jmx/upload", (req, res) => {
   // Update the JMETER_TEST variable to use the new filename
   const newTestFile = filename.endsWith('.jmx') ? filename : `${filename}.jmx`;
   
-  const ssh = spawn("ssh", [`${USERNAME}@${MASTER_IP}`, `tee ${JMETER_PATH}/${newTestFile}`]);
+  const ssh = spawn("ssh", [`${USER_NAME}@${MASTER_IP}`, `tee ${JMETER_PATH}/${newTestFile}`]);
   ssh.stdin.write(content);
   ssh.stdin.end();
 
@@ -429,7 +429,7 @@ app.get("/api/available-labels", (req, res) => {
 app.get("/api/reports", (req, res) => {
   console.log("📡 /api/reports called");
   const cmd = `find ${JMETER_PATH}/reports -maxdepth 1 -type d -name "*report*" | sort -r`;
-  const ssh = spawn("ssh", [`${USERNAME}@${MASTER_IP}`, cmd]);
+  const ssh = spawn("ssh", [`${USER_NAME}@${MASTER_IP}`, cmd]);
 
   let output = "";
   ssh.stdout.on("data", data => (output += data.toString()));
