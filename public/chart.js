@@ -440,7 +440,71 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ---- Previous Reports Management ----
+let allReports = [];
+
 async function loadPreviousReports() {
+  try {
+    const res = await fetch("/api/reports");
+    const reports = await res.json();
+    
+    // Sort reports by timestamp (latest first)
+    allReports = reports.sort((a, b) => {
+      const dateA = new Date(a.timestamp.replace(/:/g, ':').replace(/-/g, '-'));
+      const dateB = new Date(b.timestamp.replace(/:/g, ':').replace(/-/g, '-'));
+      return dateB - dateA; // Latest first
+    });
+    
+    displayReports(allReports);
+    document.getElementById("reportsStatus").innerText = `✅ Found ${allReports.length} reports`;
+  } catch (err) {
+    console.error("loadPreviousReports() error:", err);
+    document.getElementById("reportsStatus").innerText = "❌ Failed to load reports";
+  }
+}
+
+function displayReports(reports) {
+  const tbody = document.querySelector("#previousReports tbody");
+  tbody.innerHTML = "";
+  
+  reports.forEach(report => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${report.name}</td>
+      <td>${report.timestamp}</td>
+      <td>
+        <a href="${report.url}" target="_blank" class="report-link-btn">
+          <i class="fas fa-external-link-alt"></i> View Report
+        </a>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function filterReports() {
+  const searchTerm = document.getElementById("reportsSearchInput").value.toLowerCase();
+  
+  if (!searchTerm.trim()) {
+    displayReports(allReports);
+    return;
+  }
+  
+  const filteredReports = allReports.filter(report => 
+    report.name.toLowerCase().includes(searchTerm) ||
+    report.timestamp.toLowerCase().includes(searchTerm)
+  );
+  
+  displayReports(filteredReports);
+  
+  // Update status
+  const statusText = filteredReports.length === allReports.length 
+    ? `✅ Found ${allReports.length} reports`
+    : `🔍 Showing ${filteredReports.length} of ${allReports.length} reports`;
+  document.getElementById("reportsStatus").innerText = statusText;
+}
+
+// Legacy function for backward compatibility
+async function loadPreviousReportsLegacy() {
   try {
     const res = await fetch("/api/reports");
     const reports = await res.json();

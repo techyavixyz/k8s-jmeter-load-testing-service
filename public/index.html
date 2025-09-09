@@ -103,7 +103,7 @@
         </h2>
         
         <!-- Main Metrics Grid -->
-        <div class="metrics-grid">
+        <div class="metrics-single-row">
           <div class="metric-card">
             <h3><i class="fas fa-cubes"></i> Pod Count</h3>
             <canvas id="podsChart"></canvas>
@@ -116,6 +116,10 @@
             <h3><i class="fas fa-memory"></i> Memory Usage</h3>
             <canvas id="memChart"></canvas>
           </div>
+        </div>
+
+        <!-- Full Width Ingress Chart -->
+        <div class="metrics-ingress-full">
           <div class="metric-card">
             <h3><i class="fas fa-network-wired"></i> Ingress Requests</h3>
             <canvas id="ingressChart"></canvas>
@@ -246,11 +250,15 @@
                 Load HPA List
               </button>
               <select id="hpaSelect" class="form-select"></select>
-              <div class="input-group">
-                <label>Min Replicas:</label>
-                <input type="number" id="minReplicas" value="1" class="form-input">
-                <label>Max Replicas:</label>
-                <input type="number" id="maxReplicas" value="5" class="form-input">
+              <div class="input-group-hpa">
+                <div class="input-field-group">
+                  <label>Min Replicas:</label>
+                  <input type="number" id="minReplicas" value="1" class="form-input">
+                </div>
+                <div class="input-field-group">
+                  <label>Max Replicas:</label>
+                  <input type="number" id="maxReplicas" value="5" class="form-input">
+                </div>
               </div>
               <button class="action-btn save-btn" onclick="updateHpa()">
                 <i class="fas fa-save"></i>
@@ -268,6 +276,19 @@
                 <i class="fas fa-edit"></i>
                 Edit JMX File
               </button>
+              <div class="jmx-upload-section">
+                <h4>Upload New JMX File</h4>
+                <div class="file-upload-area" onclick="document.getElementById('jmxFileInput').click()" 
+                     ondrop="handleJmxDrop(event)" ondragover="handleJmxDragOver(event)" ondragleave="handleJmxDragLeave(event)">
+                  <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                  </div>
+                  <div class="upload-text">Click to select or drag & drop JMX file</div>
+                  <div class="upload-subtext">Supports .jmx files up to 10MB</div>
+                </div>
+                <input type="file" id="jmxFileInput" class="file-input" accept=".jmx" onchange="handleJmxFileSelect(event)">
+                <div id="jmxUploadStatus" class="status-message"></div>
+              </div>
               <p class="help-text">Configure your JMeter test plan settings</p>
             </div>
           </div>
@@ -290,6 +311,11 @@
               Refresh Reports
             </button>
             <div id="reportsStatus" class="status-message"></div>
+          </div>
+          
+          <div class="reports-search">
+            <i class="fas fa-search"></i>
+            <input type="text" id="reportsSearchInput" class="search-input" placeholder="Search reports by name or timestamp..." onkeyup="filterReports()">
           </div>
           
           <div class="table-wrapper">

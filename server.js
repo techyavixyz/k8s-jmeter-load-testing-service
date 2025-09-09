@@ -1,20 +1,24 @@
 import express from "express";
 import { spawn, exec } from "child_process";
 import bodyParser from "body-parser";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
 app.use(express.static("public"));
 app.use(bodyParser.json({ limit: "10mb" }));
 
-const USERNAME = "root"
-const MASTER_IP = "164.52.211.192";
-const JMETER_PATH = "~/jmeter";
-const JMETER_TEST = "gabiru.jmx";
-const JMETER_SLAVES = ["164.52.212.41", "164.52.212.42"];
-let NAMESPACE = "prod";
-let LABEL_SELECTOR = "app=imgproxy-imgproxy";
+const USERNAME = process.env.USERNAME || "root";
+const MASTER_IP = process.env.MASTER_IP || "164.52.211.192";
+const JMETER_PATH = process.env.JMETER_PATH || "~/jmeter";
+const JMETER_TEST = process.env.JMETER_TEST || "gabiru.jmx";
+const JMETER_SLAVES = process.env.JMETER_SLAVES ? process.env.JMETER_SLAVES.split(",") : ["164.52.212.41", "164.52.212.42"];
+let NAMESPACE = process.env.NAMESPACE || "prod";
+let LABEL_SELECTOR = process.env.LABEL_SELECTOR || "app=imgproxy-imgproxy";
 
 let clients = [];
 let lastReportPath = "";
@@ -338,6 +342,32 @@ app.post("/api/jmx", (req, res) => {
       res.json({ status: "saved" });
     } else {
       res.status(500).json({ error: `Failed to save JMX file (exit ${code})` });
+    }
+  });
+});
+
+// ---- JMX File Upload ----
+app.post("/api/jmx/upload", (req, res) => {
+  console.log("📡 /api/jmx/upload POST called");
+  const { filename, content } = req.body;
+  if (!content || !filename) return res.status(400).json({ error: "Missing filename or content" });
+
+  // Update the JMETER_TEST variable to use the new filename
+  const newTestFile = filename.endsWith('.jmx') ? filename : `${filename}.jmx`;
+  
+  const ssh = spawn("ssh", [`${USERNAME}@${MASTER_IP}`, `tee ${JMETER_PATH}/${newTestFile}`]);
+  ssh.stdin.write(content);
+  ssh.stdin.end();
+
+  ssh.stderr.on("data", data => console.error("SSH error:", data.toString()));
+
+  ssh.on("close", code => {
+    if (code === 0) {
+      // Update the current test file reference
+      process.env.JMETER_TEST = newTestFile;
+      res.json({ status: "uploaded", filename: newTestFile });
+    } else {
+      res.status(500).json({ error: `Failed to upload JMX file (exit ${code})` });
     }
   });
 });
