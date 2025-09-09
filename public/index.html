@@ -169,6 +169,24 @@
         </h2>
         
         <div class="management-grid">
+          <!-- Namespace Configuration -->
+          <div class="management-card">
+            <h3><i class="fas fa-layer-group"></i> Namespace Configuration</h3>
+            <div class="management-content">
+              <div class="input-group-vertical">
+                <label>Current Namespace:</label>
+                <input type="text" id="currentNamespace" class="form-input" readonly>
+                <label>New Namespace:</label>
+                <input type="text" id="newNamespace" class="form-input" placeholder="e.g., prod, staging, default">
+              </div>
+              <button class="action-btn save-btn" onclick="updateNamespace()">
+                <i class="fas fa-save"></i>
+                Update Namespace
+              </button>
+              <div id="namespaceStatus" class="status-message"></div>
+            </div>
+          </div>
+
           <!-- Label Selector Configuration -->
           <div class="management-card">
             <h3><i class="fas fa-tags"></i> Pod Label Selector</h3>
@@ -176,6 +194,10 @@
               <div class="input-group-vertical">
                 <label>Current Selector:</label>
                 <input type="text" id="currentSelector" class="form-input" readonly>
+                <label>Available Labels in Namespace:</label>
+                <select id="availableLabels" class="form-select" onchange="selectAvailableLabel()">
+                  <option value="">Loading available labels...</option>
+                </select>
                 <label>New Selector:</label>
                 <input type="text" id="newSelector" class="form-input" placeholder="e.g., app=nginx or tier=frontend">
                 <div class="selector-examples">
@@ -240,7 +262,7 @@
         </h2>
         
         <div class="tables-grid">
-          <div class="table-card timeline-card">
+          <div class="table-card">
             <h3><i class="fas fa-history"></i> Timeline Events</h3>
             <div class="table-wrapper">
               <table id="timeline" class="data-table">
@@ -258,6 +280,15 @@
                 <tbody></tbody>
               </table>
             </div>
+            <div class="table-pagination">
+              <button class="pagination-btn" onclick="previousPodPage()">
+                <i class="fas fa-chevron-left"></i> Previous
+              </button>
+              <span id="podPageInfo">Page 1</span>
+              <button class="pagination-btn" onclick="nextPodPage()">
+                Next <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
           </div>
           
           <div class="table-card">
@@ -267,6 +298,15 @@
                 <thead><tr><th>Node Name</th><th>CPU Usage</th><th>Memory Usage</th></tr></thead>
                 <tbody></tbody>
               </table>
+            </div>
+            <div class="table-pagination">
+              <button class="pagination-btn" onclick="previousNodePage()">
+                <i class="fas fa-chevron-left"></i> Previous
+              </button>
+              <span id="nodePageInfo">Page 1</span>
+              <button class="pagination-btn" onclick="nextNodePage()">
+                Next <i class="fas fa-chevron-right"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -355,6 +395,7 @@
   <script src="chart.js"></script>
   <script src="jmx.js"></script>
   <script src="hpa.js"></script>
+  <script src="pagination.js"></script>
   <script src="footer.js"></script>
 </body>
 </html>

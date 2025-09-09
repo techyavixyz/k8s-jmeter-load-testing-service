@@ -253,8 +253,88 @@ setInterval(fetchMetrics, 2000);
 setInterval(fetchNodes, 5000);
 
 // ---------------- Label Selector Management ----------------
+let CURRENT_LABEL_SELECTOR = "app=imgproxy-imgproxy";
+let CURRENT_NAMESPACE = "prod";
+
+async function loadCurrentConfig() {
+  try {
+    const selectorRes = await fetch("/api/label-selector");
+    const selectorData = await selectorRes.json();
+    CURRENT_LABEL_SELECTOR = selectorData.selector;
+    CURRENT_NAMESPACE = selectorData.namespace;
+    
+    document.getElementById("currentSelector").value = CURRENT_LABEL_SELECTOR;
+    document.getElementById("currentNamespace").value = CURRENT_NAMESPACE;
+  } catch (err) {
+    console.error("loadCurrentConfig() error:", err);
+  }
+}
+
+async function loadAvailableLabels() {
+  try {
+    const res = await fetch("/api/available-labels");
+    const data = await res.json();
+    const select = document.getElementById("availableLabels");
+    select.innerHTML = '<option value="">Select from available labels...</option>';
+    
+    data.labels.forEach(label => {
+      const option = document.createElement("option");
+      option.value = label;
+      option.textContent = label;
+      select.appendChild(option);
+    });
+  } catch (err) {
+    console.error("loadAvailableLabels() error:", err);
+  }
+}
+
+function selectAvailableLabel() {
+  const select = document.getElementById("availableLabels");
+  const selectedLabel = select.value;
+  if (selectedLabel) {
+    document.getElementById("newSelector").value = selectedLabel;
+  }
+}
+
 function setExampleSelector(selector) {
   document.getElementById("newSelector").value = selector;
+}
+
+async function updateNamespace() {
+  const newNamespace = document.getElementById("newNamespace").value.trim();
+  if (!newNamespace) {
+    alert("Please enter a namespace");
+    return;
+  }
+
+  console.log(`🏷️ updateNamespace() to: ${newNamespace}`);
+  document.getElementById("namespaceStatus").innerText = "🔄 Updating namespace...";
+  
+  try {
+    const res = await fetch("/api/namespace", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ namespace: newNamespace })
+    });
+    const data = await res.json();
+    
+    if (data.status === "updated") {
+      CURRENT_NAMESPACE = newNamespace;
+      document.getElementById("currentNamespace").value = newNamespace;
+      document.getElementById("newNamespace").value = "";
+      document.getElementById("namespaceStatus").innerText = "✅ Namespace updated successfully";
+      
+      // Reload available labels for new namespace
+      await loadAvailableLabels();
+      
+      alert(`✅ Namespace updated to: ${newNamespace}`);
+    } else {
+      document.getElementById("namespaceStatus").innerText = "❌ Update failed";
+    }
+  } catch (err) {
+    console.error("updateNamespace() error:", err);
+    document.getElementById("namespaceStatus").innerText = "❌ Update failed";
+  }
 }
 
 async function updateLabelSelector() {
@@ -312,5 +392,6 @@ async function updateLabelSelector() {
 
 // Initialize current selector display
 document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById("currentSelector").value = CURRENT_LABEL_SELECTOR;
+  loadCurrentConfig();
+  loadAvailableLabels();
 });

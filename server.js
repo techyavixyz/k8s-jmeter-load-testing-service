@@ -12,8 +12,8 @@ const MASTER_IP = "164.52.211.192";
 const JMETER_PATH = "/root/jmeter";
 const JMETER_TEST = "gabiru.jmx";
 const JMETER_SLAVES = ["164.52.212.41", "164.52.212.42"];
-const NAMESPACE = "prod";
-const LABEL_SELECTOR = "app=imgproxy-imgproxy";
+let NAMESPACE = "prod";
+let LABEL_SELECTOR = "app=imgproxy-imgproxy";
 
 let clients = [];
 let lastReportPath = "";
@@ -307,6 +307,10 @@ app.post("/api/jmx", (req, res) => {
 });
 
 // ---- Label Selector Management ----
+app.get("/api/label-selector", (req, res) => {
+  res.json({ selector: LABEL_SELECTOR, namespace: NAMESPACE });
+});
+
 app.post("/api/label-selector", (req, res) => {
   const { selector } = req.body;
   if (!selector) return res.status(400).json({ error: "Label selector required" });
@@ -316,8 +320,43 @@ app.post("/api/label-selector", (req, res) => {
   res.json({ status: "updated", selector: LABEL_SELECTOR });
 });
 
-app.get("/api/label-selector", (req, res) => {
-  res.json({ selector: LABEL_SELECTOR });
+// ---- Namespace Management ----
+app.get("/api/namespace", (req, res) => {
+  res.json({ namespace: NAMESPACE });
+});
+
+app.post("/api/namespace", (req, res) => {
+  const { namespace } = req.body;
+  if (!namespace) return res.status(400).json({ error: "Namespace required" });
+
+  console.log(`🏷️ Updating namespace to: ${namespace}`);
+  NAMESPACE = namespace;
+  res.json({ status: "updated", namespace: NAMESPACE });
+});
+
+// ---- Available Labels ----
+app.get("/api/available-labels", (req, res) => {
+  console.log("📡 /api/available-labels called");
+  exec(`kubectl get pods -n ${NAMESPACE} --show-labels -o json`, (err, stdout, stderr) => {
+    if (err) {
+      console.error("❌ kubectl get pods with labels error:", stderr.toString());
+      return res.status(500).json({ error: stderr.toString() });
+    }
+    
+    const pods = JSON.parse(stdout).items;
+    const labelSet = new Set();
+    
+    pods.forEach(pod => {
+      const labels = pod.metadata.labels || {};
+      Object.entries(labels).forEach(([key, value]) => {
+        labelSet.add(`${key}=${value}`);
+      });
+    });
+    
+    const availableLabels = Array.from(labelSet).sort();
+    console.log("✅ Available labels:", availableLabels);
+    res.json({ labels: availableLabels });
+  });
 });
 
 app.listen(PORT, () => {

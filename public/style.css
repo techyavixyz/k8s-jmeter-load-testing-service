@@ -577,18 +577,9 @@ canvas {
 }
 
 .tables-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
-}
-
-.timeline-card {
-  grid-column: 1;
-}
-
-.timeline-card .table-wrapper {
-  max-height: 500px;
-  overflow-y: auto;
 }
 .table-card {
   background: rgba(255, 255, 255, 0.05);
@@ -610,6 +601,8 @@ canvas {
 .table-wrapper {
   overflow-x: auto;
   border-radius: 8px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .data-table {
@@ -635,6 +628,44 @@ canvas {
 
 .data-table tbody tr:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+/* Table Pagination */
+.table-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 0.5rem 0;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(100, 255, 218, 0.1);
+  border: 1px solid rgba(100, 255, 218, 0.3);
+  color: #64ffda;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover {
+  background: rgba(100, 255, 218, 0.2);
+  border-color: #64ffda;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-btn:disabled:hover {
+  background: rgba(100, 255, 218, 0.1);
+  border-color: rgba(100, 255, 218, 0.3);
 }
 
 /* Modal Styles */
@@ -892,8 +923,11 @@ canvas {
   }
 
   .management-grid,
-  .tables-grid {
+  .tables-grid,
+  .table-pagination {
     grid-template-columns: 1fr;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .input-group {
