@@ -1,93 +1,329 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>K8s Load Test Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="style.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-  <h1>Kubernetes Load Test Dashboard</h1>
-
-  <div id="buttonBar">
-    <button class="start" onclick="startSlaves()">▶ Start Slave Servers</button>
-    <button class="stop" onclick="stopSlaves()">🛑 Stop Slave Servers</button>
-    <button class="test" onclick="startTest()">▶ Start JMeter Test</button>
-    <button class="download" onclick="downloadCSV()">⬇ Download CSV</button>
-  </div>
-
-  <div id="content">
-    <h2>Slave Status</h2>
-    <table id="slaveStatus">
-      <thead><tr><th>IP</th><th>Status</th></tr></thead>
-      <tbody></tbody>
-    </table>
-
-    <div id="logPanel" class="log"></div>
-    <div id="reportLink"></div>
-
-    <div class="grid">
-      <canvas id="podsChart"></canvas>
-      <canvas id="cpuChart"></canvas>
-      <canvas id="memChart"></canvas>
-      <canvas id="ingressChart"></canvas>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">
+        <i class="fas fa-server"></i>
+        <span>K8s Load Test Dashboard</span>
+      </div>
+      <nav class="nav">
+        <a href="#overview" class="nav-link">Overview</a>
+        <a href="#metrics" class="nav-link">Metrics</a>
+        <a href="#management" class="nav-link">Management</a>
+        <a href="#reports" class="nav-link">Reports</a>
+      </nav>
+      <div class="header-actions">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span>System Active</span>
+        </div>
+      </div>
     </div>
+  </header>
 
-    <h2>Per-Pod CPU/Memory</h2>
-    <div class="grid">
-      <canvas id="perPodCpuChart"></canvas>
-      <canvas id="perPodMemChart"></canvas>
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Hero Section -->
+    <section class="hero" id="overview">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <i class="fas fa-chart-line"></i>
+          Kubernetes Load Testing Dashboard
+        </h1>
+        <p class="hero-subtitle">
+          Monitor, manage, and analyze your JMeter load tests with real-time Kubernetes metrics
+        </p>
+      </div>
+    </section>
+
+    <!-- Control Panel -->
+    <section class="control-panel">
+      <div class="container">
+        <h2 class="section-title">
+          <i class="fas fa-cogs"></i>
+          Test Control Center
+        </h2>
+        <div class="button-grid">
+          <button class="control-btn start-btn" onclick="startSlaves()">
+            <i class="fas fa-play"></i>
+            <span>Start Slave Servers</span>
+          </button>
+          <button class="control-btn stop-btn" onclick="stopSlaves()">
+            <i class="fas fa-stop"></i>
+            <span>Stop Slave Servers</span>
+          </button>
+          <button class="control-btn test-btn" onclick="startTest()">
+            <i class="fas fa-rocket"></i>
+            <span>Start JMeter Test</span>
+          </button>
+          <button class="control-btn download-btn" onclick="downloadCSV()">
+            <i class="fas fa-download"></i>
+            <span>Download CSV</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Status Section -->
+    <section class="status-section">
+      <div class="container">
+        <div class="status-grid">
+          <div class="status-card">
+            <h3><i class="fas fa-server"></i> Slave Status</h3>
+            <table id="slaveStatus" class="status-table">
+              <thead><tr><th>IP Address</th><th>Status</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="status-card">
+            <h3><i class="fas fa-terminal"></i> Live Logs</h3>
+            <div id="logPanel" class="log-panel"></div>
+            <div id="reportLink" class="report-link"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Metrics Section -->
+    <section class="metrics-section" id="metrics">
+      <div class="container">
+        <h2 class="section-title">
+          <i class="fas fa-chart-bar"></i>
+          Real-time Metrics
+        </h2>
+        
+        <!-- Main Metrics Grid -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <h3><i class="fas fa-cubes"></i> Pod Count</h3>
+            <canvas id="podsChart"></canvas>
+          </div>
+          <div class="metric-card">
+            <h3><i class="fas fa-microchip"></i> CPU Usage</h3>
+            <canvas id="cpuChart"></canvas>
+          </div>
+          <div class="metric-card">
+            <h3><i class="fas fa-memory"></i> Memory Usage</h3>
+            <canvas id="memChart"></canvas>
+          </div>
+          <div class="metric-card">
+            <h3><i class="fas fa-network-wired"></i> Ingress Requests</h3>
+            <canvas id="ingressChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Per-Pod Metrics -->
+        <div class="subsection">
+          <h3 class="subsection-title">
+            <i class="fas fa-layer-group"></i>
+            Per-Pod Resource Usage
+          </h3>
+          <div class="metrics-grid-2">
+            <div class="metric-card">
+              <h4>CPU per Pod</h4>
+              <canvas id="perPodCpuChart"></canvas>
+            </div>
+            <div class="metric-card">
+              <h4>Memory per Pod</h4>
+              <canvas id="perPodMemChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Node Metrics -->
+        <div class="subsection">
+          <h3 class="subsection-title">
+            <i class="fas fa-server"></i>
+            Node Resource Usage
+          </h3>
+          <div class="metrics-grid-2">
+            <div class="metric-card">
+              <h4>Node CPU</h4>
+              <canvas id="nodeCpuChart"></canvas>
+            </div>
+            <div class="metric-card">
+              <h4>Node Memory</h4>
+              <canvas id="nodeMemChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Management Section -->
+    <section class="management-section" id="management">
+      <div class="container">
+        <h2 class="section-title">
+          <i class="fas fa-tools"></i>
+          Resource Management
+        </h2>
+        
+        <div class="management-grid">
+          <!-- HPA Management -->
+          <div class="management-card">
+            <h3><i class="fas fa-expand-arrows-alt"></i> HPA Management</h3>
+            <div class="management-content">
+              <button class="action-btn" onclick="loadHpaList()">
+                <i class="fas fa-refresh"></i>
+                Load HPA List
+              </button>
+              <select id="hpaSelect" class="form-select"></select>
+              <div class="input-group">
+                <label>Min Replicas:</label>
+                <input type="number" id="minReplicas" value="1" class="form-input">
+                <label>Max Replicas:</label>
+                <input type="number" id="maxReplicas" value="5" class="form-input">
+              </div>
+              <button class="action-btn save-btn" onclick="updateHpa()">
+                <i class="fas fa-save"></i>
+                Save HPA Configuration
+              </button>
+              <div id="hpaStatus" class="status-message"></div>
+            </div>
+          </div>
+
+          <!-- JMX Management -->
+          <div class="management-card">
+            <h3><i class="fas fa-file-code"></i> JMX Configuration</h3>
+            <div class="management-content">
+              <button class="action-btn" onclick="openJmxModal()">
+                <i class="fas fa-edit"></i>
+                Edit JMX File
+              </button>
+              <p class="help-text">Configure your JMeter test plan settings</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Data Tables Section -->
+    <section class="tables-section" id="reports">
+      <div class="container">
+        <h2 class="section-title">
+          <i class="fas fa-table"></i>
+          Resource Details
+        </h2>
+        
+        <div class="tables-grid">
+          <div class="table-card">
+            <h3><i class="fas fa-history"></i> Timeline Events</h3>
+            <div class="table-wrapper">
+              <table id="timeline" class="data-table">
+                <thead><tr><th>Time</th><th>Event</th><th>Pods</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div class="table-card">
+            <h3><i class="fas fa-cubes"></i> Pod Resources</h3>
+            <div class="table-wrapper">
+              <table id="podResources" class="data-table">
+                <thead><tr><th>Pod Name</th><th>CPU (mCores)</th><th>Memory (MiB)</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div class="table-card">
+            <h3><i class="fas fa-server"></i> Node Resources</h3>
+            <div class="table-wrapper">
+              <table id="nodeResources" class="data-table">
+                <thead><tr><th>Node Name</th><th>CPU Usage</th><th>Memory Usage</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4><i class="fas fa-info-circle"></i> About</h4>
+          <p>K8s Load Test Dashboard provides comprehensive monitoring and management for JMeter load testing in Kubernetes environments.</p>
+        </div>
+        <div class="footer-section">
+          <h4><i class="fas fa-cog"></i> Features</h4>
+          <ul>
+            <li>Real-time metrics monitoring</li>
+            <li>HPA management</li>
+            <li>JMX configuration</li>
+            <li>Automated slave management</li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4><i class="fas fa-link"></i> Quick Links</h4>
+          <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#metrics">Metrics</a></li>
+            <li><a href="#management">Management</a></li>
+            <li><a href="#reports">Reports</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4><i class="fas fa-chart-line"></i> System Status</h4>
+          <div class="system-stats">
+            <div class="stat">
+              <span class="stat-label">Uptime:</span>
+              <span class="stat-value" id="uptime">--</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Last Update:</span>
+              <span class="stat-value" id="lastUpdate">--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 K8s Load Test Dashboard. Built with modern web technologies for optimal performance monitoring.</p>
+        <div class="footer-tech">
+          <span><i class="fab fa-js-square"></i> JavaScript</span>
+          <span><i class="fas fa-chart-bar"></i> Chart.js</span>
+          <span><i class="fas fa-dharmachakra"></i> Kubernetes</span>
+          <span><i class="fas fa-tachometer-alt"></i> JMeter</span>
+        </div>
+      </div>
     </div>
+  </footer>
 
-    <h2>📊 Node CPU/Memory</h2>
-    <div class="grid">
-      <canvas id="nodeCpuChart"></canvas>
-      <canvas id="nodeMemChart"></canvas>
-    </div>
-
-    <h2>🖥️ Node Resources</h2>
-    <table id="nodeResources">
-      <thead><tr><th>Node</th><th>CPU</th><th>Memory</th></tr></thead>
-      <tbody></tbody>
-    </table>
-
-    <h2>📌 Timeline Events</h2>
-    <table id="timeline">
-      <thead><tr><th>Time</th><th>Event</th><th>Pods</th></tr></thead>
-      <tbody></tbody>
-    </table>
-
-    <h2>📊 Pod Resource Limits</h2>
-    <table id="podResources">
-      <thead><tr><th>Pod</th><th>CPU (mCores)</th><th>Memory (MiB)</th></tr></thead>
-      <tbody></tbody>
-    </table>
-
-    <h2>⚙️ Manage HPA</h2>
-    <button onclick="loadHpaList()">📂 Load HPA List</button>
-    <br/><br/>
-    <select id="hpaSelect" style="width:50%;padding:5px;"></select>
-    <br/><br/>
-    <label>Min Replicas:</label>
-    <input type="number" id="minReplicas" value="1" style="width:80px;margin:5px;">
-    <label>Max Replicas:</label>
-    <input type="number" id="maxReplicas" value="5" style="width:80px;margin:5px;">
-    <br/>
-    <button onclick="updateHpa()">💾 Save HPA</button>
-    <div id="hpaStatus"></div>
-
-
-    <h2>📝 Manage JMX File</h2>
-    <button onclick="openJmxModal()">📂 Edit JMX</button>
-
-    <!-- ✅ JMX Modal -->
-    <div id="jmxModal" class="modal">
-      <div class="modal-content">
-        <h2>📝 Edit JMX File</h2>
-        <textarea id="jmxEditor"></textarea>
-        <br/>
-        <button class="save" onclick="saveJmx()">💾 Save</button>
-        <button class="close" onclick="closeJmxModal()">❌ Close</button>
-        <div id="jmxStatus"></div>
+  <!-- JMX Modal -->
+  <div id="jmxModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-file-code"></i> Edit JMX Configuration</h2>
+        <button class="modal-close" onclick="closeJmxModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <textarea id="jmxEditor" class="jmx-editor" placeholder="JMX file content will appear here..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn save-btn" onclick="saveJmx()">
+          <i class="fas fa-save"></i>
+          Save Changes
+        </button>
+        <button class="modal-btn cancel-btn" onclick="closeJmxModal()">
+          <i class="fas fa-times"></i>
+          Cancel
+        </button>
+        <div id="jmxStatus" class="status-message"></div>
       </div>
     </div>
   </div>
@@ -95,6 +331,6 @@
   <script src="chart.js"></script>
   <script src="jmx.js"></script>
   <script src="hpa.js"></script>
-
+  <script src="footer.js"></script>
 </body>
 </html>
