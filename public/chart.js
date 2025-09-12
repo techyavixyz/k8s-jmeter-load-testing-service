@@ -12,6 +12,7 @@ async function startSlaves() {
   }
 }
 
+
 async function stopSlaves() {
   console.log("🛑 stopSlaves() clicked");
   document.getElementById("logPanel").innerHTML = "🛑 Stopping JMeter slaves...";

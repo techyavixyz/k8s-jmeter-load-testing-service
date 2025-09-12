@@ -7,6 +7,7 @@ function openJmxModal() {
     document.getElementById("jmxModal").style.display = "none";
   }
   
+  
   // Load JMX
   async function loadJmx() {
     console.log("📂 loadJmx() clicked");

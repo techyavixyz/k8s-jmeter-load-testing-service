@@ -26,6 +26,7 @@ let metricsHistory = [];
 let testStartTime = null;
 let currentTestName = "";
 
+
 // ---- SSE logs ----
 app.get("/api/logs", (req, res) => {
   console.log("📡 /api/logs connected");

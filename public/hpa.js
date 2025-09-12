@@ -18,6 +18,7 @@ async function loadHpaList() {
     }
   }
   
+  
   async function updateHpa() {
     const name = document.getElementById("hpaSelect").value;
     const minReplicas = document.getElementById("minReplicas").value;

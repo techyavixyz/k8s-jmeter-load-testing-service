@@ -8,6 +8,7 @@ let allPods = [];
 let allNodes = [];
 let allTimelineEvents = [];
 
+
 // Pod pagination
 function updatePodTable() {
   const tbody = document.querySelector("#podResources tbody");

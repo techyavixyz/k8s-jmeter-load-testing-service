@@ -17,6 +17,7 @@ function updateSystemStats() {
     document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
   }
   
+  
   // Update immediately
   updateUptime();
   updateLastUpdate();
